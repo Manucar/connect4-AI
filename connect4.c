@@ -1,22 +1,29 @@
 #include <stdio.h>
-char board[10][10];
-char num_rows=6;
-char num_cols=7;
+#include <stdbool.h>
+
+
+#define ROWS 6
+#define COLS 7
+
+char board[ROWS][COLS];
 
 void initBoard();
 void drawBoard();
 
-void addMove(char c);
-void addAIMove();
+void addMove(char c, char player);
+int minimax(int depth, char child_board[][COLS], bool maxPlayer, int alpha, int beta);
+int static_eval(char child_board[][COLS]);
+
+void addAIMove(char c, char child_board[][COLS], bool maxPlayer);
 char checkWin();
 
 int main()
 {
 	char column;
 	char end = 0;
+	bool maxPlayer=true;
 	initBoard();
 	printf("Connect 4 - AI\n");
-	//end game choice=0
 	while(!end){
 		
 		printf("Insert your move: [columns from 1 to 7]\n");
@@ -33,8 +40,8 @@ int main()
 }
 
 void initBoard(){
-	for(int r=0;r<num_rows;r++){
-		for(int c=0;c<num_cols;c++){
+	for(int r=0;r<ROWS;r++){
+		for(int c=0;c<COLS;c++){
 			board[r][c]='_';
         }
     }
@@ -42,8 +49,8 @@ void initBoard(){
 
 void drawBoard(){
 
-	for(int r=0;r<num_rows;r++){
-		for(int c=0;c<num_cols;c++){
+	for(int r=0;r<ROWS;r++){
+		for(int c=0;c<COLS;c++){
 			printf("| %c ",board[r][c]);
         }
         printf("|\n");
@@ -51,11 +58,17 @@ void drawBoard(){
 	printf("\n");
 }
 
-void addMove(char c){
-	for(int r=num_rows-1;r>=0;r--){
+void addMove(char c, char player){
+	for(int r=ROWS-1;r>=0;r--){
 		if(board[r][c-1]=='_'){
-			board[r][c-1]='X';
-			break;
+			if(player==1){
+				board[r][c-1]='X';
+				break;
+			}
+			else{
+				board[r][c-1]='O';
+				break;
+			}
 		}
 	}
 }
@@ -63,8 +76,8 @@ void addMove(char c){
 char checkWin(){
 	char winner=0; // 0 indicates no winner yet
 	//check vertically
-	for(int r=num_rows-1;r>=num_rows-3;r--){
-		for(int c=0;c<num_cols;c++){
+	for(int r=ROWS-1;r>=ROWS-3;r--){
+		for(int c=0;c<COLS;c++){
 			if(board[r][c]=='X' && board[r-1][c]=='X' && board[r-2][c]=='X' && board[r-3][c]=='X'){
 				printf("wins vertically!\n");
 				winner=1;
@@ -77,7 +90,7 @@ char checkWin(){
 	}
 
 	//check horizontally
-	for(int r=num_rows-1;r>=0;r--){
+	for(int r=ROWS-1;r>=0;r--){
 		for(int c=0;c<4;c++){
 			if(board[r][c]=='X' && board[r][c+1]=='X' && board[r][c+2]=='X' && board[r][c+3]=='X'){
 				printf("wins horizontally!\n");
@@ -91,7 +104,7 @@ char checkWin(){
 	}
 
 	//check diagonals 1
-	for(int r=num_rows-1;r>=num_rows-3;r--){
+	for(int r=ROWS-1;r>=ROWS-3;r--){
 		for(int c=0;c<4;c++){
 			if(board[r][c]=='X' && board[r-1][c+1]=='X' && board[r-2][c+2]=='X' && board[r-3][c+3]=='X'){
 				printf("wins right diagonal!\n");
@@ -105,7 +118,7 @@ char checkWin(){
 	}
 
 	//check diagonals 2
-	for(int r=num_rows-1;r>=num_rows-3;r--){
+	for(int r=ROWS-1;r>=ROWS-3;r--){
 		for(int c=3;c<7;c++){
 			if(board[r][c]=='X' && board[r-1][c-1]=='X' && board[r-2][c-2]=='X' && board[r-3][c-3]=='X'){
 				printf("wins left diagonal!\n");
@@ -121,6 +134,89 @@ char checkWin(){
 	return winner;
 }
 
-void addAIMove(){
+void addAIMove(char c, char child_board[][COLS], bool maxPlayer){
+	for(int r=ROWS-1;r>=0;r--){
+		if(child_board[r][c-1]=='_'){
+			if(maxPlayer){
+			child_board[r][c-1]='O';
+			break;
+			}
+			else{
+				child_board[r][c-1]='X';
+				break;
+			}
+		}
+	}
+}
 
+//Minimax functioning with alpha beta pruning
+int minimax(int depth, char child_board[][COLS], bool maxPlayer, int alpha, int beta) {
+
+	if (depth == 3) {
+		return static_eval(child_board);
+   	}
+
+   	if (maxPlayer) {
+   		int bestValue = -10000;
+    	for (int col = 0; col < COLS ; col++) {
+    		//TODO try to implement malloc to dinamycally allocate child tmp matrix
+	      	char child_board[ROWS][COLS];
+	      	memcpy(&child_board, &board,ROWS*COLS*sizeof(char));
+	      	addAIMove(col, child_board, maxPlayer);
+
+	        int val = minimax(depth + 1, child_board, false, alpha, beta);
+	        bestValue = max(bestValue, val);
+	        alpha = max(alpha, bestValue);
+	        if (beta <= alpha)
+	            break;
+      	}
+    return bestValue;
+
+ 	} else {
+		int bestValue = 10000;
+    	for (int col = 0; col < COLS; col++) {
+
+    		//TODO try to implement malloc to dinamycally allocate the child matrix
+	      	char child_board[ROWS][COLS];
+	      	memcpy(&child_board, &board,ROWS*COLS*sizeof(char));
+	      	addAIMove(col, child_board, maxPlayer);
+
+	        int val = minimax(depth + 1, child_board, true, alpha, beta);
+	        bestValue = min(bestValue, val);
+	        beta = min(beta, bestValue);
+	        if (beta <= alpha)
+	            break;
+        }
+      return bestValue;
+   }
+}
+
+//Heuristic to evaluate the game positions
+int static_eval(char child_board[][COLS]){
+	int score=0;
+	//check vertically
+	for(int c=0;c<COLS;c++){
+		for(int r=ROWS-1;r>=ROWS-3;r--){
+			if(child_board[r][c]=='X' && board[r-1][c]=='X' && board[r-2][c]=='X' && board[r-3][c]=='_'){
+				score-=100;
+			}
+			else if(board[r][c]=='O' && board[r-1][c]=='O' && board[r-2][c]=='O' && board[r-3][c]=='_'){
+				printf("wins vertically!\n");
+				score+=100;
+			}
+		}
+	}
+
+	//check horizontally
+	for(int r=ROWS-1;r>=0;r--){
+		for(int c=0;c<4;c++){
+			if(board[r][c]=='X' && board[r][c+1]=='X' && board[r][c+2]=='X' && board[r][c+3]=='_'){
+				score+=100;
+			}
+			else if(board[r][c]=='O' && board[r][c+1]=='O' && board[r][c+2]=='O' && board[r][c+3]=='_'){
+				score-=100;
+			}
+		}
+	}
+return score;
 }
