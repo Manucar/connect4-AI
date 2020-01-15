@@ -24,6 +24,9 @@ int main()
 {	
 	char board[ROWS][COLS];
 	int column;
+	int forward_moves = 5; //How many moves AI can look into the future
+	int alpha = -1000000;
+	int beta = 1000000;
 	char winner = 0;
 	initBoard(board);
 	drawBoard(board);
@@ -33,14 +36,14 @@ int main()
 		
 		printf("Insert your move [columns from 1 to 7]\n");
 		scanf("%d", &column);
-
-		if(is_valid_move(column-1, board)){
+		//Check if column selected is valid
+		if(((column>=1) && (column<=7)) && (is_valid_move(column-1, board))){
 			addMove(column-1, false, board);
-			minimax(5, board, true, -1000000, 1000000);
+			minimax(forward_moves, board, true, alpha, beta);
 			addMove(ai_best_move, true, board);
 		}
 		else{
-			printf("Column selected is invalid, chose another one.\n");
+			printf("!!!!Column selected is invalid, chose another one!!!!\n");
 		}
 		winner = checkWin(board);
 		drawBoard(board);
