@@ -1,47 +1,55 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
 
 #define ROWS 6
 #define COLS 7
 #define WINDOW_LENGTH 4
 
+//Function's prototype declaration
 void initBoard(char board[][COLS]);
 void drawBoard(char board[][COLS]);
-void addMove(char c, bool player, char board[][COLS]);
+void addMove(int c, bool player, char board[][COLS]);
 int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta);
 int window_eval(char window[]);
 int static_eval(char board[][COLS]);
 char checkWin(char board[][COLS]);
-bool is_terminal_node(char child_board[][COLS]);
+bool is_valid_move(int c, char board[][COLS]);
 int max(int x, int y);
 int min(int x, int y);
+void copy_matrix(char board[][COLS], char child_board[][COLS]);
 
+char ai_best_move; //Global variable that receives the best column for AI player by minimax function
 
 int main()
 {	
 	char board[ROWS][COLS];
-	char column, ai_move;
+	int column;
 	char winner = 0;
 	initBoard(board);
+	drawBoard(board);
 	printf("Connect 4 - AI\n");
+	printf("You are playing as 'X', AI is playing as 'O'\n\n");
 	while(!winner){
 		
-		printf("Insert your move: [columns from 1 to 7]\n");
+		printf("Insert your move [columns from 1 to 7]\n");
 		scanf("%d", &column);
-		addMove(column, false, board);
 
-		ai_move = minimax(5, board, true, -1000000, 1000000);
-		addMove(ai_move, true, board);
+		if(is_valid_move(column-1, board)){
+			addMove(column-1, false, board);
+			minimax(5, board, true, -1000000, 1000000);
+			addMove(ai_best_move, true, board);
+		}
+		else{
+			printf("Column selected is invalid, chose another one.\n");
+		}
 		winner = checkWin(board);
 		drawBoard(board);
-
 	}
-
 	printf("The winner is Player %d\n", winner);
 	return 0;
 }
-//Function to initialize the board with '_'
+
+//Function that initialize the board with '_'
 void initBoard(char board[][COLS]){
 	for(int r=0;r<ROWS;r++){
 		for(int c=0;c<COLS;c++){
@@ -49,31 +57,44 @@ void initBoard(char board[][COLS]){
         }
     }
 }
-//FUnction to draw the board, adding '|' for a better reading
+
+//Function to draw the board, adding '|' separator for a better reading
 void drawBoard(char board[][COLS]){
+	printf("-----------------------------");
+	printf("\n");
+
+	for(int c=0;c<COLS;c++){
+		printf("| %d ",c+1);
+	}
+	printf("|\n");
+	printf("-----------------------------");
+	printf("\n");
 	for(int r=0;r<ROWS;r++){
 		for(int c=0;c<COLS;c++){
 			printf("| %c ",board[r][c]);
         }
         printf("|\n");
 	}
+	printf("-----------------------------");
 	printf("\n");
 }
-//Function to add a piece on the board given the column and the player
-void addMove(char c, bool player, char board[][COLS]){
+
+//Function that add a piece on the board given the column and the player
+void addMove(int c, bool player, char board[][COLS]){
 	for(int r=ROWS-1;r>=0;r--){
-		if(board[r][c-1]=='_'){
+		if(board[r][c]=='_'){
 			if(player){
-				board[r][c-1]='O';
+				board[r][c]='O';
 				break;
 			}
 			else{
-				board[r][c-1]='X';
+				board[r][c]='X';
 				break;
 			}
 		}
 	}
 }
+
 //Check if there is a winner
 char checkWin(char board[][COLS]){
 	char winner=0; // 0 indicates no winner yet
@@ -81,11 +102,9 @@ char checkWin(char board[][COLS]){
 	for(int r=ROWS-1;r>=ROWS-3;r--){
 		for(int c=0;c<COLS;c++){
 			if(board[r][c]=='X' && board[r-1][c]=='X' && board[r-2][c]=='X' && board[r-3][c]=='X'){
-				printf("wins vertically!\n");
 				return 1;
 			}
 			else if(board[r][c]=='O' && board[r-1][c]=='O' && board[r-2][c]=='O' && board[r-3][c]=='O'){
-				printf("wins vertically!\n");
 				return 2;
 			}
 		}
@@ -95,11 +114,9 @@ char checkWin(char board[][COLS]){
 	for(int r=ROWS-1;r>=0;r--){
 		for(int c=0;c<4;c++){
 			if(board[r][c]=='X' && board[r][c+1]=='X' && board[r][c+2]=='X' && board[r][c+3]=='X'){
-				printf("wins horizontally!\n");
 				return 1;
 			}
 			else if(board[r][c]=='O' && board[r][c+1]=='O' && board[r][c+2]=='O' && board[r][c+3]=='O'){
-				printf("wins horizontally!\n");
 				return 2;
 			}
 		}
@@ -109,11 +126,9 @@ char checkWin(char board[][COLS]){
 	for(int r=ROWS-1;r>=ROWS-3;r--){
 		for(int c=0;c<4;c++){
 			if(board[r][c]=='X' && board[r-1][c+1]=='X' && board[r-2][c+2]=='X' && board[r-3][c+3]=='X'){
-				printf("wins positively sloped diagonal!\n");
 				return 1;
 			}
 			else if(board[r][c]=='O' && board[r-1][c+1]=='O' && board[r-2][c+2]=='O' && board[r-3][c+3]=='O'){
-				printf("wins positively sloped diagonal!\n");
 				return 2;
 			}
 		}
@@ -123,11 +138,9 @@ char checkWin(char board[][COLS]){
 	for(int r=ROWS-1;r>=ROWS-3;r--){
 		for(int c=3;c<7;c++){
 			if(board[r][c]=='X' && board[r-1][c-1]=='X' && board[r-2][c-2]=='X' && board[r-3][c-3]=='X'){
-				printf("wins negatively sloped diagonal!\n");
 				winner=1;
 			}
 			else if(board[r][c]=='O' && board[r-1][c-1]=='O' && board[r-2][c-2]=='O' && board[r-3][c-3]=='O'){
-				printf("wins negatively sloped diagonal!\n");
 				winner=2;
 			}
 		}
@@ -138,9 +151,11 @@ char checkWin(char board[][COLS]){
 //Minimax functioning with alpha beta pruning
 int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta) {
 	char winner = checkWin(board);
-	if((depth == 0) || (is_terminal_node(board)) || (winner!=0)){
+	if((depth == 0) || (winner!=0)){
+		
 		if(depth==0){
 			return static_eval(board);
+			
 		}
 		else if(winner!=0){
 			if(winner==2){
@@ -151,16 +166,15 @@ int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta) 
 			}
 		}
    	}
-
-   	if (maxPlayer) {
+   	//AI's turn ---> maximize score
+   	if(maxPlayer) {
    		int bestValue = -10000;
    		char bestMove = 1; // random init
-    	for (int col = 0; col < COLS ; col++) {
-    		//TODO try to implement malloc to dinamycally allocate child tmp matrix
+    	for (int col = 0; col < COLS ; col++){
 	      	char child_board[ROWS][COLS];
-	      	memcpy(&child_board, &board,ROWS*COLS*sizeof(char));
+	      	copy_matrix(board, child_board);
 	      	addMove(col, maxPlayer, child_board);
-
+	      
 	        int val = minimax(depth - 1, child_board, false, alpha, beta);
 	        if(val>bestValue){
 	        	bestValue=val;
@@ -171,23 +185,20 @@ int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta) 
 	            break;
 	        }
       	}
+    //Return to the global variable the best column found so far
+    ai_best_move=bestMove;
     return bestValue;
-
+    //Player's turn ---> minimize score
  	} else {
 		int bestValue = 10000;
 		char bestMove = 1; // random init
-    	for (int col = 0; col < COLS; col++) {
-
-    		//TODO try to implement malloc to dinamycally allocate the child matrix
+    	for (int col = 0; col < COLS; col++){
 	      	char child_board[ROWS][COLS];
-	      	memcpy(&child_board, &board,ROWS*COLS*sizeof(char));
+	      	copy_matrix(board, child_board);
 	      	addMove(col, maxPlayer, child_board);
 
 	        int val = minimax(depth - 1, child_board, true, alpha, beta);
-	        if(val<bestValue){
-	        	bestValue=val;
-	        	bestMove=col;
-	        }
+	        bestValue = min(val, bestValue);
 	        beta = min(beta, bestValue);
 	        if (beta <= alpha){
 	            break;
@@ -226,7 +237,7 @@ int window_eval(char window[]){
     return score;
 }
 
-//Heuristic to evaluate the game positions
+//Heuristic for evaluating the game positions
 int static_eval(char board[][COLS]){
     int score = 0;
     int center_pieces = 0;
@@ -254,23 +265,22 @@ int static_eval(char board[][COLS]){
 		}
 	}
 
-	// Score Vetical
+	// Score Vertical
     for(int c=0;c<COLS;c++){
     	char col_array[ROWS];
     	//Extract one column at the time
     	for(int r=0;r<ROWS;r++){
-    		col_array[c] = board[r][c];
+    		col_array[r] = board[r][c];
     	}
     	//Compare 4 elements of each column at the time
-		for(int r=ROWS-1;r=3;r++){
+		for(int r=ROWS-1;r>=3;r--){
 			char window[WINDOW_LENGTH];
 			for(int t=0; t<WINDOW_LENGTH;t++){
-				window[t] = col_array[t+c];
+				window[t] = col_array[t+r];
 			}
 			score += window_eval(window);
 		}
 	}
-
     // Score positively sloped diagonals
     for(int r=ROWS-1;r>=3;r--){
     	char diagp_array[WINDOW_LENGTH];
@@ -283,35 +293,31 @@ int static_eval(char board[][COLS]){
     		score += window_eval(diagp_array);
     	}
 	}
-
 	// Score negatively sloped diagonals
     for(int r=ROWS-1;r>=3;r--){
-    	char diagp_array[WINDOW_LENGTH];
+    	char diagn_array[WINDOW_LENGTH];
     	//Extract one row at the time
     	for(int c=3;c<7;c++){
     		//Compare 4 elements of each diagonal at the time
 			for(int i=0; i<WINDOW_LENGTH; i++){
-    			diagp_array[i] = board[r-i][c+i];
+    			diagn_array[i] = board[r-i][c+i];
     		}
-    		score += window_eval(diagp_array);
+    		score += window_eval(diagn_array);
     	}
 	}
     return score;
 }
 
-bool is_terminal_node(char child_board[][COLS]){
-	char count=0;
-	//Count if there is any free space in the last rows
-	for(int c=0; c<COLS; c++){
-		if(child_board[0][c]=='_'){
-			count++;
+//Check if there is any free space in the selected column
+bool is_valid_move(int c, char board[][COLS]){
+	bool flag=false;
+	for(int r=ROWS-1; r>=0; r--){
+		if(board[r][c]=='_'){
+			flag = true;
+			break;
 		}
 	}
-	if(count!=0){
-		return false;
-	}else{
-		return true;
-	}
+	return flag;
 }
 
 // Useful functions
@@ -329,4 +335,12 @@ int min(int x, int y){
 	}else{
 		return y;
 	}
+}
+
+void copy_matrix(char board[][COLS], char child_board[][COLS]){
+	for(int r=0;r<ROWS;r++){
+		for(int c=0;c<COLS;c++){
+			child_board[r][c]= board[r][c];
+        }
+    }
 }
