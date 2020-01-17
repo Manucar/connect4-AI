@@ -176,17 +176,23 @@ int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta) 
     	for (int col = 0; col < COLS ; col++){
 	      	char child_board[ROWS][COLS];
 	      	copy_matrix(board, child_board);
-	      	addMove(col, maxPlayer, child_board);
-	      
-	        int val = minimax(depth - 1, child_board, false, alpha, beta);
-	        if(val>bestValue){
-	        	bestValue=val;
-	        	bestMove=col;
-	        }
-	        alpha = max(alpha, bestValue);
-	        if (beta <= alpha){
-	            break;
-	        }
+	      	//Check if the selected column is full
+	      	if(is_valid_move(col, child_board)){
+				addMove(col, maxPlayer, child_board);
+				int val = minimax(depth - 1, child_board, false, alpha, beta);
+		        if(val>bestValue){
+		        	bestValue=val;
+		        	bestMove=col;
+		        }
+		        alpha = max(alpha, bestValue);
+		        if (beta <= alpha){
+		            break;
+		        }
+			}
+			//if it is not a valid move, skip this loop cycle
+			else{
+				continue;
+			}
       	}
     //Return to the global variable the best column found so far
     ai_best_move=bestMove;
@@ -194,18 +200,23 @@ int minimax(int depth, char board[][COLS], bool maxPlayer, int alpha, int beta) 
     //Player's turn ---> minimize score
  	} else {
 		int bestValue = 10000;
-		char bestMove = 1; // random init
     	for (int col = 0; col < COLS; col++){
 	      	char child_board[ROWS][COLS];
 	      	copy_matrix(board, child_board);
-	      	addMove(col, maxPlayer, child_board);
-
-	        int val = minimax(depth - 1, child_board, true, alpha, beta);
-	        bestValue = min(val, bestValue);
-	        beta = min(beta, bestValue);
-	        if (beta <= alpha){
-	            break;
-	        }
+	      	//Check if the selected column is full
+	      	if(is_valid_move(col, child_board)){
+				addMove(col, maxPlayer, child_board);
+				int val = minimax(depth - 1, child_board, true, alpha, beta);
+		        bestValue = min(val, bestValue);
+		        beta = min(beta, bestValue);
+		        if (beta <= alpha){
+		            break;
+		        }
+		    }
+			//If it is not a valid move, skip this loop cycle
+			else{
+				continue;
+			}	        
         }
       return bestValue;
    }
