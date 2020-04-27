@@ -3,3 +3,13 @@
 <p align="center">
   <img src="image.png">
 </p>
+
+## *Usage information*
+- Compile connect4.c
+    ```
+    $ gcc connect4.c -o connect4
+    ```
+ - Launch the binary
+    ```
+    $ ./connect4
+    ```
